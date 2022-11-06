@@ -2,11 +2,10 @@ package commands
 
 import (
 	"bufio"
-//	"errors"
 	"fmt"
 	"os"
 	"os/exec"
-//	"path"
+
 	"runtime"
 	"strings"
 
