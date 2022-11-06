@@ -1,2 +1,3 @@
 # git-ci
-Lazy commit wrapper
+
+Lazy commit wrapper for branches created from JIRA tickets.
