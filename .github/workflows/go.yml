@@ -38,7 +38,7 @@ jobs:
       run: go build -v .
 
     - name: Test
-      run: go test -v . | go2xunit > xunit.xml
+      run: go test -v ./... | go2xunit > xunit.xml
 
     - name: Report
       uses: dorny/test-reporter@v1
