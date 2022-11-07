@@ -38,6 +38,39 @@ func init() {
 
 }
 
+func ExtractTicket(instr string) (string, error) {
+	retv := ""
+	var err error
+	match := pattern.FindStringSubmatch(instr)
+
+	if len(match) != 0 {
+		lastIndex := pattern.SubexpIndex("ticket")
+		retv = match[lastIndex]
+		err = nil
+	} else {
+	err = fmt.Errorf("Cannot find ticket in string")
+	}
+
+	return retv, err
+}
+
+func BuildMessageString(branchname, message string) (string, error) {
+	if len(message) == 0 {
+		return "", fmt.Errorf("message is empty")
+	}
+	if len(branchname) == 0 {
+		return "", fmt.Errorf("branch is empty")
+	}
+
+	retv := message
+
+	ticket, err := ExtractTicket(branchname)
+	if err == nil {
+		retv = fmt.Sprintf("%s %s", ticket, message)
+	}
+	return retv, nil
+}
+
 func main() {
 	flag.Parse()
 
@@ -50,6 +83,7 @@ func main() {
 
 	}
 	args := flag.Args()
+
 	log.Debugf("actions: %s\n", strings.Join(args, " "))
 
 	git := commands.NewGitCmd()
@@ -57,13 +91,14 @@ func main() {
 
 	log.Debugf("branch:  %s\n", branch)
 
-	match := pattern.FindStringSubmatch(branch)
-
-	if len(match) != 0 {
-		lastIndex := pattern.SubexpIndex("ticket")
-		ticket := match[lastIndex]
-		message = fmt.Sprintf("%s %s", ticket, message)
+	message, err := BuildMessageString(branch, message)
+	if err != nil {
+		log.Errorf("message failed: %s", err)
+		return
 	}
+
+	log.Debugf("message: %s", message)
+
 	stdout_lines, stderr_lines, exitcode := git.Commit(message, args...)
 
 	if exitcode != nil {

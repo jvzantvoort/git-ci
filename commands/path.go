@@ -25,6 +25,10 @@ func (p Path) Prefix() string {
 }
 
 func (p Path) HavePath(inputdir string) bool {
+	log_prefix := p.Prefix()
+	log.Debugf("%s: start", log_prefix)
+	defer log.Debugf("%s: end", log_prefix)
+
 	for _, element := range p.Directories {
 		if element == inputdir {
 			return true
