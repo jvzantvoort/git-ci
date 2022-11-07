@@ -20,10 +20,7 @@ func ErrorContains(out error, want string) bool {
 	return strings.Contains(out.Error(), want)
 }
 
-
-//
 // Prefix tests
-//
 func TestPrefix(t *testing.T) {
 	p := Path{}
 	p.Type = "lala"
@@ -33,9 +30,7 @@ func TestPrefix(t *testing.T) {
 	}
 }
 
-//
 // Path tests
-//
 type pathTest struct {
 	inputstr string
 	path     []string
@@ -71,10 +66,10 @@ type appendPathTest struct {
 }
 
 var appendPathTests = []appendPathTest{
-	appendPathTest{"/etc", []string{"/tmp", "/var", "/etc"},  ""},
-	appendPathTest{"/NOEXIST", []string{"/tmp", "/var", "/etc"},  "stat /NOEXIST: no such file or directory"},
-	appendPathTest{"/bin", []string{"/tmp", "/var", "/etc"},  ""},
-	appendPathTest{"/usr", []string{"/tmp", "/var", "/etc"},  ""},
+	appendPathTest{"/etc", []string{"/tmp", "/var", "/etc"}, ""},
+	appendPathTest{"/NOEXIST", []string{"/tmp", "/var", "/etc"}, "stat /NOEXIST: no such file or directory"},
+	appendPathTest{"/bin", []string{"/tmp", "/var", "/etc"}, ""},
+	appendPathTest{"/usr", []string{"/tmp", "/var", "/etc"}, ""},
 }
 
 func TestAppendPath(t *testing.T) {
@@ -88,4 +83,3 @@ func TestAppendPath(t *testing.T) {
 		}
 	}
 }
-
