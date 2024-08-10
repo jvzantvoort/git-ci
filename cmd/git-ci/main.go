@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	flag "github.com/spf13/pflag"
 
 	"github.com/jvzantvoort/git-ci/commands"
+	"github.com/jvzantvoort/git-ci/messages"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -64,6 +67,14 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
+	if subcmnd == "bs" {
+		rand.Seed(time.Now().UnixNano())
+		bullshit := messages.GetBullShit()
+		randomIndex := rand.Intn(len(bullshit))
+		message = bullshit[randomIndex]
+		subcmnd = "minor"
+	}
+
 	if len(message) == 0 {
 		log.Fatalf("Error: missing message")
 
@@ -88,7 +99,10 @@ func main() {
 	git := commands.NewGitCmd()
 	branch := git.Branch()
 
-	msg.SetBranch(branch)
+	err := msg.SetBranch(branch)
+	if err != nil {
+		log.Warningf("Warning: set branch failed: %s", err)
+	}
 	msg.SetScope(scope)
 
 	message = msg.String()
