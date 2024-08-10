@@ -12,6 +12,7 @@ type ticketMatchingTest struct {
 }
 
 type buildMessageStringTest struct {
+	num        int
 	branchname string
 	message    string
 	outputstr  string
@@ -26,10 +27,9 @@ var ticketMatchingTests = []ticketMatchingTest{
 }
 
 var buildMessageStringTests = []buildMessageStringTest{
-	buildMessageStringTest{"feature/ABCD-1234-is-lala", "foo to the bar", "ABCD-1234 foo to the bar", nil, ""},
-	buildMessageStringTest{"feature/garbage", "foo to the bar", "foo to the bar", nil, ""},
-	buildMessageStringTest{"", "foo to the bar", "", nil, "branch is empty"},
-	buildMessageStringTest{"feature/lala", "", "", nil, "message is empty"},
+	buildMessageStringTest{1, "feature/ABCD-1234-is-lala", "foo to the bar", "ABCD-1234 foo to the bar", nil, ""},
+	buildMessageStringTest{2, "feature/garbage", "foo to the bar", "foo to the bar", nil, "cannot find ticket in string"},
+	buildMessageStringTest{3, "", "foo to the bar", "foo to the bar", nil, "branch is empty"},
 }
 
 // ErrorContains checks if the error message in out contains the text in
@@ -48,8 +48,9 @@ func ErrorContains(out error, want string) bool {
 }
 
 func TestPat1(t *testing.T) {
+	m := &Message{}
 	for _, test := range ticketMatchingTests {
-		gotstr, err := ExtractTicket(test.inputstr)
+		gotstr, err := m.ExtractTicket(test.inputstr)
 		if gotstr != test.outputstr {
 			t.Errorf("got %q, wanted %q", gotstr, test.outputstr)
 		}
@@ -62,12 +63,15 @@ func TestPat1(t *testing.T) {
 
 func TestBM(t *testing.T) {
 	for _, test := range buildMessageStringTests {
-		gotstr, err := BuildMessageString(test.branchname, test.message)
+		var err error
+		m := &Message{Message: test.message}
+		err = m.SetBranch(test.branchname)
+		gotstr := m.String()
 		if gotstr != test.outputstr {
-			t.Errorf("got %q, wanted %q", gotstr, test.outputstr)
+			t.Errorf("got %q, wanted %q -> %d", gotstr, test.outputstr, test.num)
 		}
 		if !ErrorContains(err, test.errstr) {
-			t.Errorf("Unexpected error %v", err)
+			t.Errorf("Unexpected error %v (%d)", err, test.num)
 		}
 
 	}

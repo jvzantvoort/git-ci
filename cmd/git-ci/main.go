@@ -1,20 +1,24 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
-	"regexp"
+	"path/filepath"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 
 	"github.com/jvzantvoort/git-ci/commands"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	verbose bool
-	message string
-	pattern = regexp.MustCompile(`^(?P<type>\w+)/(?P<ticket>\w+-\d+).*$`)
+	verbose     bool
+	message     string
+	scope       string
+	programname string
+	mtype       string
+	subcmnd     string
 )
 
 func init() {
@@ -31,47 +35,29 @@ func init() {
 	// Only log the warning severity or above.
 	log.SetLevel(log.InfoLevel)
 
-	flag.BoolVar(&verbose, "verbose", false, "verbose messages")
-	flag.BoolVar(&verbose, "v", false, "verbose messages")
-	flag.StringVar(&message, "m", "", "commit message")
-	flag.StringVar(&message, "message", "", "commit message")
+	flag.BoolVarP(&verbose, "verbose", "v", false, "verbose messages")
+	flag.StringVarP(&mtype, "type", "t", "", "message type (see help)")
+	flag.StringVarP(&message, "message", "m", "", "commit message")
+	flag.StringVarP(&scope, "scope", "s", "", "type scope (e.g. auth, build, docs, API)")
+	flag.ErrHelp = nil
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "This application demonstrates extended usage info.\n\n")
+		fmt.Fprintf(os.Stderr, "Available flags:\n")
+		flag.PrintDefaults()
+		PrintTypes()
 
-}
-
-func ExtractTicket(instr string) (string, error) {
-	retv := ""
-	var err error
-	match := pattern.FindStringSubmatch(instr)
-
-	if len(match) != 0 {
-		lastIndex := pattern.SubexpIndex("ticket")
-		retv = match[lastIndex]
-		err = nil
-	} else {
-		err = fmt.Errorf("cannot find ticket in string")
+		os.Exit(0)
 	}
-
-	return retv, err
-}
-
-func BuildMessageString(branchname, message string) (string, error) {
-	if len(message) == 0 {
-		return "", fmt.Errorf("message is empty")
-	}
-	if len(branchname) == 0 {
-		return "", fmt.Errorf("branch is empty")
-	}
-
-	retv := message
-
-	ticket, err := ExtractTicket(branchname)
-	if err == nil {
-		retv = fmt.Sprintf("%s %s", ticket, message)
-	}
-	return retv, nil
 }
 
 func main() {
+
+	// Get own name and (git) sub command
+	programname = filepath.Base(os.Args[0])
+	subcmnd = strings.Replace(programname, "git-", "", 1)
+
+	// Parse the arguments
 	flag.Parse()
 
 	if verbose {
@@ -84,20 +70,28 @@ func main() {
 	}
 	args := flag.Args()
 
-	log.Debugf("actions: %s\n", strings.Join(args, " "))
+	// ci is a special case
+	if subcmnd == "ci" {
+		subcmnd = "feat"
+	}
+
+	if !IsZeroOfUnderlyingType(mtype) {
+		subcmnd = mtype
+	}
+
+	if subcmnd == "new" {
+		subcmnd = "feat"
+	}
+
+	msg := NewMessage(message, subcmnd)
 
 	git := commands.NewGitCmd()
 	branch := git.Branch()
 
-	log.Debugf("branch:  %s\n", branch)
+	msg.SetBranch(branch)
+	msg.SetScope(scope)
 
-	message, err := BuildMessageString(branch, message)
-	if err != nil {
-		log.Errorf("message failed: %s", err)
-		return
-	}
-
-	log.Debugf("message: %s", message)
+	message = msg.String()
 
 	stdout_lines, stderr_lines, exitcode := git.Commit(message, args...)
 
