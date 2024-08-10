@@ -1,11 +1,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 
 	"github.com/jvzantvoort/git-ci/commands"
 	log "github.com/sirupsen/logrus"
@@ -31,10 +32,8 @@ func init() {
 	// Only log the warning severity or above.
 	log.SetLevel(log.InfoLevel)
 
-	flag.BoolVar(&verbose, "verbose", false, "verbose messages")
-	flag.BoolVar(&verbose, "v", false, "verbose messages")
-	flag.StringVar(&message, "m", "", "commit message")
-	flag.StringVar(&message, "message", "", "commit message")
+	flag.BoolVarP(&verbose, "verbose", "v", false, "verbose messages")
+	flag.StringVarP(&message, "message", "m", "", "commit message")
 
 }
 
