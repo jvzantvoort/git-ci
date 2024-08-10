@@ -42,3 +42,5 @@ ln -s git-ci git-config
 ln -s git-ci git-hotfix
 ln -s git-ci git-release
 ```
+
+*Warning*: git bs add random messages
