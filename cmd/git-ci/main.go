@@ -72,6 +72,7 @@ func main() {
 		bullshit := messages.GetBullShit()
 		randomIndex := rand.Intn(len(bullshit))
 		message = bullshit[randomIndex]
+		subcmnd = "minor"
 	}
 
 	if len(message) == 0 {
