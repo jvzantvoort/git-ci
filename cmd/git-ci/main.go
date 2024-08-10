@@ -48,7 +48,7 @@ func ExtractTicket(instr string) (string, error) {
 		retv = match[lastIndex]
 		err = nil
 	} else {
-		err = fmt.Errorf("Cannot find ticket in string")
+		err = fmt.Errorf("cannot find ticket in string")
 	}
 
 	return retv, err
