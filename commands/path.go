@@ -197,7 +197,7 @@ func (p Path) LookupPlatform(pathmap map[string]string) (string, error) {
 	}
 	log.Errorf("%s: cannot find %s in path", log_prefix, commandname)
 
-	return "", fmt.Errorf("Target not found")
+	return "", fmt.Errorf("target not found")
 }
 
 func NewPath(pathname string) *Path {
