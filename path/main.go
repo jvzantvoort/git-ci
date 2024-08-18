@@ -1,5 +1,5 @@
 // PATH type handling.
-package commands
+package path
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/jvzantvoort/git-ci/utils"
 	"github.com/mitchellh/go-homedir"
-	log "github.com/sirupsen/logrus"
 )
 
 type Path struct {
@@ -18,16 +18,9 @@ type Path struct {
 	Directories []string
 }
 
-func (p Path) Prefix() string {
-	pc, _, _, _ := runtime.Caller(1)
-	elements := strings.Split(runtime.FuncForPC(pc).Name(), ".")
-	return fmt.Sprintf("%s[%s]", elements[len(elements)-1], p.Type)
-}
-
 func (p Path) HavePath(inputdir string) bool {
-	log_prefix := p.Prefix()
-	log.Debugf("%s: start", log_prefix)
-	defer log.Debugf("%s: end", log_prefix)
+	utils.LogStart()
+	defer utils.LogEnd()
 
 	for _, element := range p.Directories {
 		if element == inputdir {
@@ -39,11 +32,10 @@ func (p Path) HavePath(inputdir string) bool {
 
 // AppendPath append a path to the list of Directories
 func (p *Path) AppendPath(inputdir string) error {
-	log_prefix := p.Prefix()
-	log.Debugf("%s: start", log_prefix)
-	defer log.Debugf("%s: end", log_prefix)
+	utils.LogStart()
+	defer utils.LogEnd()
 
-	log.Debugf("%s: inputdir=%s", log_prefix, inputdir)
+	utils.Debugf("inputdir=%s", inputdir)
 
 	if len(inputdir) == 0 {
 		return nil
@@ -51,7 +43,7 @@ func (p *Path) AppendPath(inputdir string) error {
 
 	fullpath, err := homedir.Expand(inputdir)
 	if err != nil {
-		log.Errorf("error %s", err)
+		utils.Errorf("error %s", err)
 		return err
 	}
 
@@ -68,11 +60,10 @@ func (p *Path) AppendPath(inputdir string) error {
 }
 
 func (p *Path) PrependPath(inputdir string) error {
-	log_prefix := p.Prefix()
-	log.Debugf("%s: start", log_prefix)
-	defer log.Debugf("%s: end", log_prefix)
+	utils.LogStart()
+	defer utils.LogEnd()
 
-	log.Debugf("%s: inputdir=%s", log_prefix, inputdir)
+	utils.Debugf("inputdir=%s", inputdir)
 
 	if len(inputdir) == 0 {
 		return nil
@@ -80,7 +71,7 @@ func (p *Path) PrependPath(inputdir string) error {
 
 	fullpath, err := homedir.Expand(inputdir)
 	if err != nil {
-		log.Errorf("error %s", err)
+		utils.Errorf("error %s", err)
 		return err
 	}
 
@@ -92,16 +83,15 @@ func (p *Path) PrependPath(inputdir string) error {
 }
 
 func (p *Path) Import(path string) {
-	log_prefix := p.Prefix()
-	log.Debugf("%s: start", log_prefix)
-	defer log.Debugf("%s: end", log_prefix)
+	utils.LogStart()
+	defer utils.LogEnd()
 
-	log.Debugf("%s: path=%s", log_prefix, path)
+	utils.Debugf("path=%s", path)
 
 	for _, dirn := range strings.Split(path, ":") {
 		err := p.AppendPath(dirn)
 		if err != nil {
-			log.Errorf("Error: %v", err)
+			utils.Errorf("Error: %v", err)
 		}
 	}
 }
@@ -132,9 +122,8 @@ func (p Path) targetExists(targetpath string) bool {
 }
 
 func (p Path) Lookup(target string) (string, error) {
-	log_prefix := p.Prefix()
-	log.Debugf("%s: start", log_prefix)
-	defer log.Debugf("%s: end", log_prefix)
+	utils.LogStart()
+	defer utils.LogEnd()
 
 	var retv string
 	var err error
@@ -161,46 +150,58 @@ func (p Path) LookupMulti(targets ...string) (string, error) {
 }
 
 func (p Path) MapGetPlatform(pathmap map[string]string) (string, error) {
-	log_prefix := p.Prefix()
-	log.Debugf("%s: start", log_prefix)
-	defer log.Debugf("%s: end", log_prefix)
+	utils.LogStart()
+	defer utils.LogEnd()
 
 	goos := runtime.GOOS
-	log.Debugf("%s: os=%s", log_prefix, goos)
+	utils.Debugf("os=%s", goos)
 	if target, ok := pathmap[goos]; ok {
-		log.Debugf("%s: found key: %s -> %s", log_prefix, goos, target)
+		utils.Debugf("found key: %s -> %s", goos, target)
 		return target, nil
 	}
 	if target, ok := pathmap["default"]; ok {
-		log.Debugf("%s: found key: default -> %s", log_prefix, target)
+		utils.Debugf("found key: default -> %s", target)
 		return target, nil
 	}
 
-	return "", fmt.Errorf("%s: map keys not found", log_prefix)
+	return "", fmt.Errorf("map keys not found")
 }
 
 // LookupPlatform lookup paths based on platform
 func (p Path) LookupPlatform(pathmap map[string]string) (string, error) {
-	log_prefix := p.Prefix()
-	log.Debugf("%s: start", log_prefix)
-	defer log.Debugf("%s: end", log_prefix)
+	utils.LogStart()
+	defer utils.LogEnd()
 
 	commandname, err := p.MapGetPlatform(pathmap)
 	if err != nil {
-		log.Errorf("Err: %s", err)
+		utils.Errorf("Err: %s", err)
 		return "", err
 	}
 
 	if result, err := p.Lookup(commandname); err == nil {
-		log.Debugf("%s: found: %s -> %s", log_prefix, commandname, result)
+		utils.Debugf("found: %s -> %s", commandname, result)
 		return result, nil
 	}
-	log.Errorf("%s: cannot find %s in path", log_prefix, commandname)
+	utils.Errorf("cannot find %s in path", commandname)
 
 	return "", fmt.Errorf("target not found")
 }
 
-func NewPath(pathname string) *Path {
+func (p Path) Git() string {
+
+	CommandMap := map[string]string{
+		"windows": "git.exe",
+		"linux":   "git",
+		"default": "git",
+	}
+
+	if result, err := p.LookupPlatform(CommandMap); err == nil {
+		return result
+	}
+	return ""
+}
+
+func New(pathname string) *Path {
 	retv := &Path{}
 	retv.Type = pathname
 	retv.Home, _ = homedir.Dir()

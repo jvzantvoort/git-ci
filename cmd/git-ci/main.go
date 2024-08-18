@@ -10,7 +10,7 @@ import (
 
 	flag "github.com/spf13/pflag"
 
-	"github.com/jvzantvoort/git-ci/commands"
+	"github.com/jvzantvoort/git-ci/git"
 	"github.com/jvzantvoort/git-ci/messages"
 	log "github.com/sirupsen/logrus"
 )
@@ -96,7 +96,7 @@ func main() {
 
 	msg := NewMessage(message, subcmnd)
 
-	git := commands.NewGitCmd()
+	git := git.New()
 	branch := git.Branch()
 
 	err := msg.SetBranch(branch)
